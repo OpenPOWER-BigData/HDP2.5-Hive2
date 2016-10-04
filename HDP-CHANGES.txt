@@ -1,0 +1,51 @@
+Changes only in Hortonworks git repo and not in released hive-2.1.0
+===================================================================
+
+BUG FIXES
+    HIVE-14439. LlapTaskScheduler should try scheduling tasks when a node is disabled.
+    HIVE-14421. FS.deleteOnExit holds references to _tmp_space.db files.
+    HIVE-14245. NoClassDefFoundError when starting LLAP daemon.
+    HIVE-14403. LLAP node specific preemption will only preempt once on a node per AM.
+    HIVE-14392. llap daemons should try using YARN local dirs, if available
+    HIVE-14364. Update timeouts for llap comparator tests.
+    HIVE-14224: LLAP: Rename query specific log files when a query completes execution.
+    HIVE-14230: Hadoop23Shims.cloneUgi() doesn't add credentials from original UGI
+    HIVE-14180: Disable LlapZookeeperRegistry ZK auth setup for external clients
+    HIVE-14219: LLAP external client on secure cluster: Protocol interface org.apache.hadoop.hive.llap.protocol.LlapTaskUmbilicalProtocol is not known
+    HIVE-14182: Revert HIVE-13084/HIVE-13924/HIVE-14034
+    HIVE-14045: (Vectorization) Add missing case for BINARY in VectorizationContext.getNormalizedName method
+    HIVE-14119: LLAP external recordreader not returning non-ascii string properly
+    HIVE-10815 : Let HiveMetaStoreClient Choose MetaStore Randomly
+    HIVE-14080 : hive.metastore.schema.verification should check for schema compatiblity
+    HIVE-14072 : QueryIds reused across different queries
+    HIVE-14136 : LLAP ZK SecretManager should resolve _HOST in principal
+    HIVE-14091 : some errors are not propagated to LLAP external clients
+    HIVE-14078: LLAP input split should get task attempt number from conf if available
+    HIVE-14093: LLAP output format connection should wait for all writes to finish before closing channel
+    HIVE-13931: Update connection pool usage from bonecp to hikaricp
+    HIVE-13617 : LLAP: support non-vectorized execution in IO
+    HIVE-14023. LLAP: Make the Hive query id available in ContainerRunner.
+    HIVE-13956: LLAP: external client output is writing to channel before it is writable again
+    HIVE-13759: LlapTaskUmbilicalExternalClient should be closed by the record reader
+    HIVE-13771 : LLAPIF: generate app ID
+    HIVE-13827 : LLAPIF: authentication on the output channel
+    HIVE-13731 : LLAP: return LLAP token with the splits
+    HIVE-13443 : LLAP: signing for the second state of submit (the event)
+    HIVE-13675 : LLAP: add HMAC signatures to LLAPIF splits
+    HIVE-13986 : LLAP: kill Tez AM on token errors from plugin
+    HIVE-13391 : add an option to LLAP to use keytab to authenticate to read data
+    HIVE-13930: upgrade Hive to latest Hadoop version
+    HIVE-13909 : upgrade ACLs in LLAP registry when the cluster is upgraded to secure
+    HIVE-14349 : Vectorization: LIKE should anchor the regexes 
+    
+
+INTERNAL FIXES (NO APACHE JIRA)
+    MHIVE-830: dbType "azuredb" not supported in HDP 2.5 hive metastore initSchema
+    CUST-92: change azure db upgrade to 1.2.1000 to use upsert
+    CUST-92: change azure db upgrade to 1.1,1.2 to use upsert
+    MHIVE-753: azure db upgrade failure
+    PROD-1120: Hive metastore fails to start with Invalid object name 'DBS'
+    MHIVE-661: fix NOTIFICATION_SEQUENCE table creation in azuredb.sql
+    HIVE-630: Hive Metastore creation fails in hdp 2.3 with dbType as azuredb
+    MHIVE-535: Add Support for AzureDB in SchemaTool
+

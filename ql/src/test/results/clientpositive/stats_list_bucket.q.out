@@ -1,0 +1,128 @@
+PREHOOK: query: -- INCLUDE_HADOOP_MAJOR_VERSIONS(0.23)
+
+drop table stats_list_bucket
+PREHOOK: type: DROPTABLE
+POSTHOOK: query: -- INCLUDE_HADOOP_MAJOR_VERSIONS(0.23)
+
+drop table stats_list_bucket
+POSTHOOK: type: DROPTABLE
+PREHOOK: query: drop table stats_list_bucket_1
+PREHOOK: type: DROPTABLE
+POSTHOOK: query: drop table stats_list_bucket_1
+POSTHOOK: type: DROPTABLE
+PREHOOK: query: create table stats_list_bucket (
+  c1 string,
+  c2 string
+) partitioned by (ds string, hr string)
+skewed by (c1, c2) on  (('466','val_466'),('287','val_287'),('82','val_82'))
+stored as directories
+stored as rcfile
+PREHOOK: type: CREATETABLE
+PREHOOK: Output: database:default
+PREHOOK: Output: default@stats_list_bucket
+POSTHOOK: query: create table stats_list_bucket (
+  c1 string,
+  c2 string
+) partitioned by (ds string, hr string)
+skewed by (c1, c2) on  (('466','val_466'),('287','val_287'),('82','val_82'))
+stored as directories
+stored as rcfile
+POSTHOOK: type: CREATETABLE
+POSTHOOK: Output: database:default
+POSTHOOK: Output: default@stats_list_bucket
+PREHOOK: query: -- Try partitioned table with list bucketing.
+-- The stats should show 500 rows loaded, as many rows as the src table has.
+
+insert overwrite table stats_list_bucket partition (ds = '2008-04-08',  hr = '11')
+  select key, value from src
+PREHOOK: type: QUERY
+PREHOOK: Input: default@src
+PREHOOK: Output: default@stats_list_bucket@ds=2008-04-08/hr=11
+POSTHOOK: query: -- Try partitioned table with list bucketing.
+-- The stats should show 500 rows loaded, as many rows as the src table has.
+
+insert overwrite table stats_list_bucket partition (ds = '2008-04-08',  hr = '11')
+  select key, value from src
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@src
+POSTHOOK: Output: default@stats_list_bucket@ds=2008-04-08/hr=11
+POSTHOOK: Lineage: stats_list_bucket PARTITION(ds=2008-04-08,hr=11).c1 SIMPLE [(src)src.FieldSchema(name:key, type:string, comment:default), ]
+POSTHOOK: Lineage: stats_list_bucket PARTITION(ds=2008-04-08,hr=11).c2 SIMPLE [(src)src.FieldSchema(name:value, type:string, comment:default), ]
+PREHOOK: query: desc stats_list_bucket partition (ds = '2008-04-08',  hr = '11')
+PREHOOK: type: DESCTABLE
+PREHOOK: Input: default@stats_list_bucket
+POSTHOOK: query: desc stats_list_bucket partition (ds = '2008-04-08',  hr = '11')
+POSTHOOK: type: DESCTABLE
+POSTHOOK: Input: default@stats_list_bucket
+c1                  	string              	                    
+c2                  	string              	                    
+ds                  	string              	                    
+hr                  	string              	                    
+	 	 
+# Partition Information	 	 
+# col_name            	data_type           	comment             
+	 	 
+ds                  	string              	                    
+hr                  	string              	                    
+PREHOOK: query: -- Also try non-partitioned table with list bucketing.
+-- Stats should show the same number of rows.
+
+create table stats_list_bucket_1 (
+  c1 string,
+  c2 string
+)
+skewed by (c1, c2) on  (('466','val_466'),('287','val_287'),('82','val_82'))
+stored as directories
+stored as rcfile
+PREHOOK: type: CREATETABLE
+PREHOOK: Output: database:default
+PREHOOK: Output: default@stats_list_bucket_1
+POSTHOOK: query: -- Also try non-partitioned table with list bucketing.
+-- Stats should show the same number of rows.
+
+create table stats_list_bucket_1 (
+  c1 string,
+  c2 string
+)
+skewed by (c1, c2) on  (('466','val_466'),('287','val_287'),('82','val_82'))
+stored as directories
+stored as rcfile
+POSTHOOK: type: CREATETABLE
+POSTHOOK: Output: database:default
+POSTHOOK: Output: default@stats_list_bucket_1
+PREHOOK: query: insert overwrite table stats_list_bucket_1
+  select key, value from src
+PREHOOK: type: QUERY
+PREHOOK: Input: default@src
+PREHOOK: Output: default@stats_list_bucket_1
+POSTHOOK: query: insert overwrite table stats_list_bucket_1
+  select key, value from src
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@src
+POSTHOOK: Output: default@stats_list_bucket_1
+POSTHOOK: Lineage: stats_list_bucket_1.c1 SIMPLE [(src)src.FieldSchema(name:key, type:string, comment:default), ]
+POSTHOOK: Lineage: stats_list_bucket_1.c2 SIMPLE [(src)src.FieldSchema(name:value, type:string, comment:default), ]
+PREHOOK: query: desc stats_list_bucket_1
+PREHOOK: type: DESCTABLE
+PREHOOK: Input: default@stats_list_bucket_1
+POSTHOOK: query: desc stats_list_bucket_1
+POSTHOOK: type: DESCTABLE
+POSTHOOK: Input: default@stats_list_bucket_1
+c1                  	string              	                    
+c2                  	string              	                    
+PREHOOK: query: drop table stats_list_bucket
+PREHOOK: type: DROPTABLE
+PREHOOK: Input: default@stats_list_bucket
+PREHOOK: Output: default@stats_list_bucket
+POSTHOOK: query: drop table stats_list_bucket
+POSTHOOK: type: DROPTABLE
+POSTHOOK: Input: default@stats_list_bucket
+POSTHOOK: Output: default@stats_list_bucket
+PREHOOK: query: drop table stats_list_bucket_1
+PREHOOK: type: DROPTABLE
+PREHOOK: Input: default@stats_list_bucket_1
+PREHOOK: Output: default@stats_list_bucket_1
+POSTHOOK: query: drop table stats_list_bucket_1
+POSTHOOK: type: DROPTABLE
+POSTHOOK: Input: default@stats_list_bucket_1
+POSTHOOK: Output: default@stats_list_bucket_1
