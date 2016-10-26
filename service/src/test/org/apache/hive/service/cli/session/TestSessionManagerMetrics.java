@@ -18,6 +18,10 @@
 
 package org.apache.hive.service.cli.session;
 
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.apache.hadoop.hive.common.metrics.MetricsTestUtils;
 import org.apache.hadoop.hive.common.metrics.common.MetricsConstant;
 import org.apache.hadoop.hive.common.metrics.common.MetricsFactory;
@@ -25,10 +29,11 @@ import org.apache.hadoop.hive.common.metrics.metrics2.CodahaleMetrics;
 import org.apache.hadoop.hive.common.metrics.metrics2.MetricsReporting;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hive.service.server.HiveServer2;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.File;
+//import java.io.File;
 
 /**
  * Test metrics from SessionManager.
@@ -37,6 +42,13 @@ public class TestSessionManagerMetrics {
 
   private static SessionManager sm;
   private static CodahaleMetrics metrics;
+  private static final int BARRIER_AWAIT_TIMEOUT = 90;
+  private static final String FAIL_TO_START_MSG = "The tasks could not be started within "
+      + BARRIER_AWAIT_TIMEOUT + " seconds before the %s metrics verification.";
+  private static final String FAIL_TO_COMPLETE_MSG = "The tasks could not be completed within "
+      + BARRIER_AWAIT_TIMEOUT + " seconds after the %s metrics verification.";
+  private final CyclicBarrier ready = new CyclicBarrier(3);
+  private final CyclicBarrier completed = new CyclicBarrier(3);
 
   @BeforeClass
   public static void setup() throws Exception {
@@ -59,17 +71,15 @@ public class TestSessionManagerMetrics {
     metrics = (CodahaleMetrics) MetricsFactory.getInstance();
   }
 
-  final Object barrier = new Object();
 
   class BarrierRunnable implements Runnable {
     @Override
     public void run() {
-      synchronized (barrier) {
-        try {
-          barrier.wait();
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
+    try {
+	ready.await();
+        completed.await();
+      } catch (InterruptedException | BrokenBarrierException e) {
+        throw new RuntimeException(e);
       }
     }
   }
@@ -80,21 +90,36 @@ public class TestSessionManagerMetrics {
   @Test
   public void testThreadPoolMetrics() throws Exception {
 
-    sm.submitBackgroundOperation(new BarrierRunnable());
-    sm.submitBackgroundOperation(new BarrierRunnable());
-    sm.submitBackgroundOperation(new BarrierRunnable());
-    sm.submitBackgroundOperation(new BarrierRunnable());
+    String errorMessage = null;
+    try {
+      sm.submitBackgroundOperation(new BarrierRunnable());
+      sm.submitBackgroundOperation(new BarrierRunnable());
+      sm.submitBackgroundOperation(new BarrierRunnable());
+      sm.submitBackgroundOperation(new BarrierRunnable());
 
-    String json = metrics.dumpJson();
+      errorMessage = String.format(FAIL_TO_START_MSG, "first");
+      ready.await(BARRIER_AWAIT_TIMEOUT, TimeUnit.SECONDS);
+      ready.reset();
 
-    MetricsTestUtils.verifyMetricsJson(json, MetricsTestUtils.GAUGE, MetricsConstant.EXEC_ASYNC_POOL_SIZE, 2);
-    MetricsTestUtils.verifyMetricsJson(json, MetricsTestUtils.GAUGE, MetricsConstant.EXEC_ASYNC_QUEUE_SIZE, 2);
+      String json = metrics.dumpJson();
+      MetricsTestUtils.verifyMetricsJson(json, MetricsTestUtils.GAUGE, MetricsConstant.EXEC_ASYNC_POOL_SIZE, 2);
+      MetricsTestUtils.verifyMetricsJson(json, MetricsTestUtils.GAUGE, MetricsConstant.EXEC_ASYNC_QUEUE_SIZE, 2);
 
-    synchronized (barrier) {
-      barrier.notifyAll();
+      errorMessage = String.format(FAIL_TO_COMPLETE_MSG, "first");
+      completed.await(BARRIER_AWAIT_TIMEOUT, TimeUnit.SECONDS);
+      completed.reset();
+
+      errorMessage = String.format(FAIL_TO_START_MSG, "second");
+      ready.await(BARRIER_AWAIT_TIMEOUT, TimeUnit.SECONDS);
+
+      json = metrics.dumpJson();
+      MetricsTestUtils.verifyMetricsJson(json, MetricsTestUtils.GAUGE, MetricsConstant.EXEC_ASYNC_POOL_SIZE, 2);
+      MetricsTestUtils.verifyMetricsJson(json, MetricsTestUtils.GAUGE, MetricsConstant.EXEC_ASYNC_QUEUE_SIZE, 0);
+
+      errorMessage = String.format(FAIL_TO_COMPLETE_MSG, "second");
+      completed.await(BARRIER_AWAIT_TIMEOUT, TimeUnit.SECONDS);
+    } catch (TimeoutException e) {
+      Assert.fail(errorMessage);
     }
-    json = metrics.dumpJson();
-    MetricsTestUtils.verifyMetricsJson(json, MetricsTestUtils.GAUGE, MetricsConstant.EXEC_ASYNC_POOL_SIZE, 2);
-    MetricsTestUtils.verifyMetricsJson(json, MetricsTestUtils.GAUGE, MetricsConstant.EXEC_ASYNC_QUEUE_SIZE, 0);
   }
 }
